@@ -1,0 +1,279 @@
+/* ==========================================================
+   InvoiceGen — M/S Ganapati Trading Co
+   Invoice Preview Styles (must be <style> tag so html2canvas
+   can read them during PDF generation)
+   ========================================================== */
+
+/* ---- Outer container ---- */
+#invoice-preview {
+  width: 794px;
+  min-height: 1123px;
+  background: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  color: #000000;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+/* ---- Main outer table ---- */
+.inv-main {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1.5px solid #000;
+  table-layout: fixed;
+}
+
+.inv-main td,
+.inv-main th {
+  border: 1px solid #000;
+  vertical-align: top;
+}
+
+/* ---- TAX INVOICE header row ---- */
+.inv-header td {
+  text-align: center;
+  font-weight: bold;
+  font-size: 12.5px;
+  padding: 5px 10px;
+  letter-spacing: 2px;
+  border: 1px solid #000;
+}
+
+/* ---- Company section ---- */
+.company-cell {
+  width: 55%;
+  padding: 8px 10px;
+}
+
+.inv-co-name {
+  font-size: 17px;
+  font-weight: bold;
+  color: #000;
+  line-height: 1.15;
+}
+
+.inv-co-addr {
+  font-size: 9.5px;
+  margin-top: 4px;
+  line-height: 1.55;
+}
+
+.inv-co-gst {
+  font-size: 9.5px;
+  color: #1055b0;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.inv-co-contact {
+  font-size: 9.5px;
+  margin-top: 3px;
+  line-height: 1.6;
+}
+
+/* ---- Invoice fields (right of company) ---- */
+.inv-fields-cell {
+  width: 45%;
+  padding: 0;
+}
+
+.inv-fields-tbl {
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+}
+
+.inv-fields-tbl td {
+  border: 1px solid #000;
+  padding: 4px 7px;
+  font-size: 9px;
+  vertical-align: top;
+  width: 50%;
+}
+
+.f-label {
+  display: block;
+  font-size: 9px;
+  color: #000;
+}
+
+.f-value {
+  display: block;
+  font-weight: bold;
+  font-size: 10.5px;
+  margin-top: 2px;
+  color: #000;
+}
+
+/* ---- Buyer section ---- */
+.buyer-cell {
+  width: 55%;
+  padding: 7px 10px;
+  min-height: 90px;
+}
+
+.buyer-section-lbl {
+  font-size: 9px;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+.buyer-name {
+  font-size: 11.5px;
+  font-weight: bold;
+  color: #000;
+}
+
+.buyer-addr {
+  font-size: 9.5px;
+  margin-top: 4px;
+  line-height: 1.55;
+}
+
+.buyer-gst-row,
+.buyer-state-row {
+  font-size: 9.5px;
+  margin-top: 4px;
+}
+
+/* ---- Items table ---- */
+.items-cell {
+  padding: 0;
+  border: 1px solid #000;
+}
+
+.items-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.items-tbl th {
+  border: 1px solid #000;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: bold;
+  padding: 5px 4px;
+  background: #fff;
+}
+
+.items-tbl td {
+  border: 1px solid #000;
+  font-size: 9.5px;
+  padding: 5px 5px;
+  vertical-align: top;
+}
+
+.col-slno  { width: 5%;  text-align: center; }
+.col-desc  { width: 38%; }
+.col-hsn   { width: 12%; text-align: center; }
+.col-qty   { width: 10%; text-align: center; }
+.col-rate  { width: 10%; text-align: right; }
+.col-per   { width: 7%;  text-align: center; }
+.col-gross { width: 18%; text-align: right; }
+
+/* ---- Bank details ---- */
+.bank-cell {
+  width: 55%;
+  padding: 7px 10px;
+  vertical-align: top;
+  border: 1px solid #000;
+}
+
+.bank-title {
+  font-size: 9.5px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.bank-row {
+  font-size: 9px;
+  margin-bottom: 3px;
+  line-height: 1.4;
+}
+
+/* ---- Tax calculations ---- */
+.tax-cell {
+  width: 45%;
+  padding: 0;
+  vertical-align: top;
+  border: 1px solid #000;
+}
+
+.tax-tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tax-tbl td {
+  border: 1px solid #000;
+  padding: 3px 7px;
+  font-size: 9.5px;
+  vertical-align: middle;
+}
+
+.tax-lbl    { text-align: right;  font-weight: bold; }
+.tax-pct    { text-align: center; }
+.tax-amt    { text-align: right;  white-space: nowrap; min-width: 70px; }
+.net-row td { font-weight: bold;  font-size: 10px; }
+
+/* ---- Amount in words ---- */
+.words-cell {
+  padding: 7px 10px;
+  border: 1px solid #000;
+}
+
+.words-title { font-size: 9px; }
+
+.words-value {
+  font-size: 10px;
+  font-weight: bold;
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+.co-sig-line {
+  text-align: right;
+  font-size: 9.5px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+/* ---- Signatures ---- */
+.sig-cell-left {
+  width: 50%;
+  padding: 7px 10px;
+  height: 58px;
+  vertical-align: bottom;
+  font-size: 9.5px;
+  border: 1px solid #000;
+}
+
+.sig-cell-right {
+  width: 50%;
+  padding: 7px 10px;
+  height: 58px;
+  text-align: right;
+  vertical-align: bottom;
+  font-size: 9.5px;
+  border: 1px solid #000;
+}
+
+/* ---- Declaration ---- */
+.decl-cell {
+  text-align: center;
+  padding: 7px 10px;
+  border: 1px solid #000;
+}
+
+.decl-title {
+  font-weight: bold;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.decl-text {
+  font-size: 9px;
+  line-height: 1.7;
+}

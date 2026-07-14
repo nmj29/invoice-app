@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvoiceGen — M/S Ganapati Trading Co</title>
+  <meta name="description" content="AI-powered GST tax invoice generator for M/S Ganapati Trading Co. Select a client, add goods, and download a pixel-perfect PDF invoice instantly.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Invoice preview styles — inlined so html2canvas captures them correctly -->
+  <link rel="stylesheet" href="invoice.css">
+
+  <!-- PDF Libraries (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ====================================================
+       SIDEBAR — Form Panel
+       ==================================================== -->
+  <aside class="sidebar">
+
+    <!-- Header / Logo -->
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">🧾</div>
+        <div>
+          <div class="logo-title">InvoiceGen</div>
+          <div class="logo-sub">M/S Ganapati Trading Co</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable form area -->
+    <div class="sidebar-scroll">
+
+      <!-- ── Invoice Details ── -->
+      <div class="form-section">
+        <div class="section-label">📋 Invoice Details</div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="invoiceNo">Invoice No.</label>
+            <input type="text" id="invoiceNo" placeholder="107/2026-27" title="Auto-generated from counter + financial year">
+          </div>
+          <div class="form-group half">
+            <label for="invoiceDate">Invoice Date</label>
+            <input type="date" id="invoiceDate">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="challanNo">Challan No.</label>
+            <input type="number" id="challanNo" min="1" placeholder="107">
+          </div>
+          <div class="form-group half">
+            <label for="modeOfPayment">Mode of Payment</label>
+            <input type="text" id="modeOfPayment" placeholder="e.g. NEFT, Cheque">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label for="myGSTIN">Our Company GSTIN <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(saved in your browser)</span></label>
+          <input type="text" id="myGSTIN" placeholder="Enter your GSTIN" style="text-transform:uppercase" title="Saved securely in your browser only">
+        </div>
+
+        <div class="form-group" style="margin-top: 6px;">
+          <label for="myBankDetails">Bank Details <span style="font-size:10px;color:var(--text-dim);font-weight:400;">(saved in your browser)</span></label>
+          <textarea id="myBankDetails" rows="4"
+            placeholder="Line 1: Bank Name (e.g. INDIAN BANK)&#10;Line 2: Account No (e.g. 50392863955)&#10;Line 3: Branch (e.g. Salt Lake LA BLOCK)&#10;Line 4: IFSC Code (e.g. IDIB000S550)"
+            title="Saved securely in your browser only"></textarea>
+          <span style="font-size:10px; color:var(--text-dim);">Type each detail on a separate line. Only saved on this device — never uploaded online.</span>
+        </div>
+      </div>
+
+      <!-- ── Buyer Details ── -->
+      <div class="form-section">
+        <div class="section-label">🏢 Buyer Details</div>
+
+        <div class="form-group">
+          <label for="clientSelect">Select Client</label>
+          <div class="input-with-action">
+            <select id="clientSelect">
+              <option value="">— Select Client —</option>
+            </select>
+            <button class="action-btn" onclick="app.openModal('clientModal')" title="Add New Client">＋</button>
+          </div>
+        </div>
+
+        <div id="clientInfo" class="info-card" style="display:none;"></div>
+      </div>
+
+      <!-- ── Line Items ── -->
+      <div class="form-section">
+        <div class="section-label">📦 Line Items</div>
+        <div id="lineItemsContainer"></div>
+        <button class="add-item-btn" onclick="app.addItem()">＋ Add Line Item</button>
+      </div>
+
+      <!-- ── Tax Summary ── -->
+      <div class="form-section summary-section">
+        <div class="section-label">💰 Tax Summary</div>
+        <div class="summary-grid">
+          <div class="sum-row"><span>Taxable Amount</span><strong id="sumTaxable">₹0.00</strong></div>
+          <div class="sum-row"><span>CGST @ 2.5%</span><strong id="sumCGST">₹0.00</strong></div>
+          <div class="sum-row"><span>SGST @ 2.5%</span><strong id="sumSGST">₹0.00</strong></div>
+          <div class="sum-row"><span>Round Off</span><strong id="sumRoundOff">₹0.00</strong></div>
+          <div class="sum-row total"><span>Net Amount</span><strong id="sumNet">₹0.00</strong></div>
+        </div>
+      </div>
+
+      <!-- ── Mobile-only Download button (always visible on phones) ── -->
+      <div class="form-section mobile-dl-section">
+        <button class="dl-btn" id="dlBtnMobile" onclick="app.downloadPDF()" style="width:100%; font-size:16px; padding:14px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download PDF
+        </button>
+        <button class="reset-btn" onclick="app.reset()" style="width:100%; margin-top:10px; text-align:center;">Reset</button>
+      </div>
+
+    </div><!-- /sidebar-scroll -->
+
+    <!-- Sticky footer actions -->
+    <div class="sidebar-footer">
+      <button class="dl-btn" id="dlBtn" onclick="app.downloadPDF()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download PDF
+      </button>
+      <button class="reset-btn" onclick="app.reset()">Reset</button>
+    </div>
+
+  </aside><!-- /sidebar -->
+
+
+  <!-- ====================================================
+       MAIN — Live Invoice Preview
+       ==================================================== -->
+  <main class="preview-panel">
+
+    <div class="preview-topbar">
+      <span class="preview-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        Live Invoice Preview
+      </span>
+      <span class="preview-zoom" id="zoomLabel">100%</span>
+    </div>
+
+    <div class="preview-scroll" id="previewScroll">
+      <!-- Wrapper that takes the scaled dimensions so scrollbar is correct -->
+      <div id="previewOuter">
+        <!-- This element gets CSS transform: scale() -->
+        <div id="previewInner">
+
+          <!-- ============================================
+               INVOICE PREVIEW — matches reference exactly
+               ============================================ -->
+          <div id="invoice-preview">
+            <table class="inv-main">
+
+              <!-- ── TAX INVOICE Header ── -->
+              <tr class="inv-header">
+                <td colspan="2">TAX INVOICE</td>
+              </tr>
+
+              <!-- ── Company Info  |  Invoice Fields ── -->
+              <tr>
+                <td class="company-cell">
+                  <div class="inv-co-name">M/S GANAPATI TRADING CO</div>
+                  <div class="inv-co-addr">
+                    6/C, RANI RASHMONI GARDEN LANE,<br>
+                    TANGRA, KOLKATA, WEST BENGAL,700015
+                  </div>
+                  <div class="inv-co-gst">GST:- <span id="pMyGSTIN"></span></div>
+                  <div class="inv-co-contact">
+                    Mobile NO:-9830361975<br>
+                    E-Mail:- ganapatitilrading0@gmail.com
+                  </div>
+                </td>
+                <td class="inv-fields-cell">
+                  <table class="inv-fields-tbl">
+                    <tr>
+                      <td>
+                        <span class="f-label">Invoice No.</span>
+                        <strong class="f-value" id="pInvoiceNo"></strong>
+                      </td>
+                      <td>
+                        <span class="f-label">Dated</span>
+                        <strong class="f-value" id="pInvoiceDate"></strong>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <span class="f-label">Challan No.</span>
+                        <strong class="f-value" id="pChallanNo"></strong>
+                      </td>
+                      <td>
+                        <span class="f-label">Mode/Terms of payments</span>
+                        <span id="pMode" style="font-size:9px; display:block; margin-top:2px;"></span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <span class="f-label">Supplier's Ref</span>
+                      </td>
+                      <td>
+                        <span class="f-label">Other Reference(s)</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- ── Buyer Info  |  Dispatch Info ── -->
+              <tr>
+                <td class="buyer-cell">
+                  <div class="buyer-section-lbl">Buyer</div>
+                  <div class="buyer-name" id="pBuyerName"></div>
+                  <div class="buyer-addr"  id="pBuyerAddr"></div>
+                  <div class="buyer-gst-row">
+                    GSTIN &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : &nbsp;<span id="pBuyerGSTIN"></span>
+                  </div>
+                  <div class="buyer-state-row">
+                    State Name &nbsp;&nbsp;&nbsp; : &nbsp;<span id="pBuyerState"></span>
+                  </div>
+                </td>
+                <td class="inv-fields-cell">
+                  <table class="inv-fields-tbl">
+                    <tr>
+                      <td><span class="f-label">Buyer's Order No.</span><br><br></td>
+                      <td><span class="f-label">Dated</span><br><br></td>
+                    </tr>
+                    <tr>
+                      <td><span class="f-label">Despatch Document No.</span></td>
+                      <td><span class="f-label">Delivery Note Date</span></td>
+                    </tr>
+                    <tr>
+                      <td><span class="f-label">Despatched Through</span></td>
+                      <td>
+                        <span class="f-label">Destination</span>
+                        <strong class="f-value" id="pDest">Kolkata</strong>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- ── Items Table ── -->
+              <tr>
+                <td colspan="2" class="items-cell">
+                  <table class="items-tbl">
+                    <thead>
+                      <tr>
+                        <th class="col-slno">Sl No.</th>
+                        <th class="col-desc">Description Of Goods</th>
+                        <th class="col-hsn">HSN Code</th>
+                        <th class="col-qty">Quantity</th>
+                        <th class="col-rate">Rate</th>
+                        <th class="col-per">Per</th>
+                        <th class="col-gross">Gross Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pItemsBody">
+                      <!-- Dynamic rows injected by app.js -->
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- ── Bank Details  |  Tax Calculations ── -->
+              <tr>
+                <td class="bank-cell">
+                  <div class="bank-title">Company's Bank Details:-</div>
+                  <div class="bank-row">Bank Name &nbsp;&nbsp; : &nbsp;<span id="pBankName"></span></div>
+                  <div class="bank-row">A/c No. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : &nbsp;<span id="pBankAcc"></span></div>
+                  <div class="bank-row">Branch &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : &nbsp;<span id="pBankBranch"></span></div>
+                  <div class="bank-row">&amp; IFS Code &nbsp;&nbsp;: &nbsp;<span id="pBankIFSC"></span></div>
+                </td>
+                <td class="tax-cell">
+                  <table class="tax-tbl">
+                    <tr>
+                      <td colspan="2" class="tax-lbl">TAXABLE AMOUNT</td>
+                      <td class="tax-amt" id="pTaxable"></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:3px 7px; font-size:9.5px;">CGST @</td>
+                      <td class="tax-pct">2.5%</td>
+                      <td class="tax-amt" id="pCGST"></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:3px 7px; font-size:9.5px;">SGST @</td>
+                      <td class="tax-pct">2.5%</td>
+                      <td class="tax-amt" id="pSGST"></td>
+                    </tr>
+                    <tr>
+                      <td colspan="2" class="tax-lbl">ROUND OFF</td>
+                      <td class="tax-amt" id="pRoundOff"></td>
+                    </tr>
+                    <tr class="net-row">
+                      <td colspan="2" class="tax-lbl">NET AMOUNT</td>
+                      <td class="tax-amt" id="pNetAmt"></td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- ── Amount in Words + Company Sig ── -->
+              <tr>
+                <td colspan="2" class="words-cell">
+                  <div class="words-title">Amount Chargeable (in Words)</div>
+                  <div class="words-value" id="pWords"></div>
+                  <div class="co-sig-line">for M/S GANAPATI TRADING CO</div>
+                </td>
+              </tr>
+
+              <!-- ── Customer & Authorised Signatures ── -->
+              <tr>
+                <td class="sig-cell-left">Customer Signature</td>
+                <td class="sig-cell-right">Authorised Signature</td>
+              </tr>
+
+              <!-- ── Declaration ── -->
+              <tr>
+                <td colspan="2" class="decl-cell">
+                  <div class="decl-title">Declaration</div>
+                  <div class="decl-text">
+                    We declare that this invoice shows the actual price of the goods<br>
+                    described and that all particulars are true and correct
+                  </div>
+                </td>
+              </tr>
+
+            </table>
+          </div><!-- /#invoice-preview -->
+
+        </div><!-- /#previewInner -->
+      </div><!-- /#previewOuter -->
+    </div><!-- /.preview-scroll -->
+
+  </main><!-- /.preview-panel -->
+
+</div><!-- /.app -->
+
+
+<!-- ====================================================
+     ADD CLIENT MODAL
+     ==================================================== -->
+<div class="modal-backdrop" id="clientModal" style="display:none"
+     onclick="app.closeOnBackdrop(event, 'clientModal')" role="dialog" aria-modal="true" aria-label="Add New Client">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3>Add New Client</h3>
+      <button class="modal-x" onclick="app.closeModal('clientModal')" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-bdy">
+      <div class="form-group">
+        <label for="ncName">Client Name *</label>
+        <input type="text" id="ncName" placeholder="M.M.P.FILTRATION PVT-LTD" autocomplete="organization">
+      </div>
+      <div class="form-group">
+        <label for="ncAddr">Address *</label>
+        <textarea id="ncAddr" rows="2" placeholder="34/C SRI AURBINDO SARRANI KOLKATA 700005"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group half">
+          <label for="ncGSTIN">GSTIN *</label>
+          <input type="text" id="ncGSTIN" placeholder="19AADCM4694A1ZG" maxlength="15"
+                 style="text-transform:uppercase" autocomplete="off">
+        </div>
+        <div class="form-group half">
+          <label for="ncState">State Name</label>
+          <input type="text" id="ncState" placeholder="West Bengal">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="ncDest">Destination City</label>
+        <input type="text" id="ncDest" placeholder="Kolkata">
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-secondary" onclick="app.closeModal('clientModal')">Cancel</button>
+      <button class="btn-primary" onclick="app.saveClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ====================================================
+     ADD PRODUCT MODAL
+     ==================================================== -->
+<div class="modal-backdrop" id="productModal" style="display:none"
+     onclick="app.closeOnBackdrop(event, 'productModal')" role="dialog" aria-modal="true" aria-label="Add New Product">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3>Add New Product</h3>
+      <button class="modal-x" onclick="app.closeModal('productModal')" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-bdy">
+      <div class="form-group">
+        <label for="npDesc">Description of Goods *</label>
+        <textarea id="npDesc" rows="4"
+          placeholder="Polyester Sewing Thread&#10;Tkt30/5000mtr&#10;&#10;                   N.White"></textarea>
+        <span style="font-size:10px; color:var(--text-dim);">
+          Use line breaks to format the description exactly as it should appear on the invoice.
+        </span>
+      </div>
+      <div class="form-row">
+        <div class="form-group half">
+          <label for="npHSN">HSN Code *</label>
+          <input type="text" id="npHSN" placeholder="55081000">
+        </div>
+        <div class="form-group half">
+          <label for="npPer">Per (Unit)</label>
+          <input type="text" id="npPer" placeholder="Pc" value="Pc">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group half" style="max-width:100%; flex:1;">
+          <label for="npRate">Default Rate (₹)</label>
+          <input type="number" id="npRate" placeholder="254.00" min="0" step="0.01">
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-secondary" onclick="app.closeModal('productModal')">Cancel</button>
+      <button class="btn-primary" onclick="app.saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Scripts -->
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
